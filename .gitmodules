@@ -1,0 +1,7 @@
+[submodule "src/ondewo-csi-api"]
+	path = src/ondewo-csi-api
+	url = git@github.com:ondewo/ondewo-csi-api.git
+	branch = release/2.1.0
+[submodule "ondewo-proto-compiler"]
+	path = ondewo-proto-compiler
+	url = git@github.com:ondewo/ondewo-proto-compiler.git
