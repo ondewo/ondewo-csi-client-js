@@ -30,7 +30,7 @@ IMAGE_UTILS_NAME=ondewo-csi-client-utils-js:${ONDEWO_CSI_VERSION}
 PRETTIER_WRITE?=
 
 CURRENT_RELEASE_NOTES=`cat RELEASE.md \
-	| sed -n '/Release ONDEWO CSI JS Client ${ONDEWO_CSI_VERSION}/,/\*\*/p'`
+	| sed -n '/Release ONDEWO CSI Js Client ${ONDEWO_CSI_VERSION}/,/\*\*/p'`
 
 
 GH_REPO="https://github.com/ondewo/ondewo-csi-client-js"
