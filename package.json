@@ -1,6 +1,6 @@
 {
 	"name": "@ondewo/ondewo-csi-client-js",
-	"version": "2.3.1",
+	"version": "3.0.0",
 	"description": "Ondewo csi creation and handling client library for js",
 	"keywords": [
 		"ondewo",
