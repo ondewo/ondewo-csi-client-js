@@ -1,6 +1,6 @@
 {
 	"name": "@ondewo/ondewo-csi-client-js",
-	"version": "3.0.0",
+	"version": "4.0.0",
 	"description": "Ondewo csi creation and handling client library for js",
 	"keywords": [
 		"ondewo",
@@ -29,8 +29,8 @@
 		"directory": "https://github.com/ondewo/ondewo-csi-client-js.git"
 	},
 	"dependencies": {
-		"google-protobuf": "3.21.0",
-		"grpc-web": "^1.3.1",
-		"webpack": "^5.74.0"
+		"google-protobuf": "^3.21.2",
+    "grpc-web": "^1.5.0",
+		"webpack": "^5.91.0"
 	}
 }

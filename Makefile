@@ -15,10 +15,10 @@ export
 # 		Variables
 ########################################################
 
-ONDEWO_CSI_VERSION = 3.0.0
+ONDEWO_CSI_VERSION=4.0.0
 
-CSI_API_GIT_BRANCH=tags/3.0.0
-ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/4.1.1
+CSI_API_GIT_BRANCH=tags/4.0.0
+ONDEWO_PROTO_COMPILER_GIT_BRANCH=master
 ONDEWO_PROTO_COMPILER_DIR=ondewo-proto-compiler
 CSI_APIS_DIR=src/ondewo-csi-api
 CSI_PROTOS_DIR=${CSI_APIS_DIR}/ondewo
