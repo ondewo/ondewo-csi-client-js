@@ -1,6 +1,19 @@
-RELEASE.md
-src/
+# release automation
+ondewo-devops-accounts
 ondewo-proto-compiler
-ondewo-csi-api
+build_check.*
+build_check.txt
+build_check_temp.txt
+RELEASE.md
+README.md
+
 npm
-.vscode
+.idea/
+.vscode/
+node_modules
+
+ondewo-csi-api/*
+src/ondewo-csi-api/*
+
+.isort.cfg
+grpc_cert
