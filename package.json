@@ -1,6 +1,6 @@
 {
 	"name": "@ondewo/ondewo-csi-client-js",
-	"version": "4.0.0",
+	"version": "5.0.0",
 	"description": "ONDEWO Communication System Integration (CSI) Client library for Js",
 	"author": "ONDEWO GmbH <office@ondewo.com>",
 	"homepage": "https://ondewo.com",
@@ -23,13 +23,13 @@
 		"webpack": "^5.96.1"
 	},
 	"devDependencies": {
-		"@eslint/eslintrc": "^3.1.0",
-		"@eslint/js": "^9.14.0",
-		"@typescript-eslint/eslint-plugin": "^8.12.2",
-		"@typescript-eslint/parser": "^8.12.2",
-		"eslint": "^9.14.0",
+		"@eslint/eslintrc": "^3.2.0",
+		"@eslint/js": "^9.15.0",
+		"@typescript-eslint/eslint-plugin": "^8.15.0",
+		"@typescript-eslint/parser": "^8.15.0",
+		"eslint": "^9.15.0",
 		"global": "^4.4.0",
-		"husky": "^9.1.6",
+		"husky": "^9.1.7",
 		"prettier": "^3.3.3"
 	}
 }
