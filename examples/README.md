@@ -12,7 +12,7 @@ It demonstrates the three steps a consumer needs:
 2. **Construct the client** — `new ondewo_csi_api.ConversationsPromiseClient('<host>:<port>', null, null)`.
    In a browser the `ondewo_csi_api` namespace comes from the compiled bundle loaded via a `<script>`
    tag; in Node the `loadCsiApi()` helper evaluates the same bundle.
-3. **Call an RPC** — attach `{ authorization: 'Bearer <token>' }` metadata and read the response.
+3. **Call an RPC** — attach `{ Authorization: 'Bearer <token>' }` metadata and read the response.
 
 The RPC-calling logic (`getS2sPipeline`) takes its client, request class and auth provider as arguments,
 so it is runnable in the browser and in Node, and unit-testable with the transport mocked.

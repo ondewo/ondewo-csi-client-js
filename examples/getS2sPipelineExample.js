@@ -92,7 +92,7 @@ function loadCsiApi() {
 async function getS2sPipeline({ conversationsClient, S2sPipelineId, authProvider, pipelineId }) {
 	const request = new S2sPipelineId();
 	request.setId(pipelineId);
-	const metadata = { authorization: authProvider.getAuthorizationHeader() };
+	const metadata = { Authorization: authProvider.getAuthorizationHeader() };
 	return conversationsClient.getS2sPipeline(request, metadata);
 }
 

@@ -121,7 +121,7 @@ runTestCase(
 		assert.equal(stub.calls.length, 1);
 		assert.ok(stub.calls[0].request instanceof csiApi.S2sPipelineId);
 		assert.equal(stub.calls[0].request.getId(), PIPELINE_ID);
-		assert.deepEqual(stub.calls[0].metadata, { authorization: `Bearer ${ACCESS_TOKEN}` });
+		assert.deepEqual(stub.calls[0].metadata, { Authorization: `Bearer ${ACCESS_TOKEN}` });
 		assert.equal(pipeline, response);
 		assert.equal(pipeline.getId(), PIPELINE_ID);
 	}
