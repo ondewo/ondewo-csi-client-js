@@ -217,6 +217,8 @@ create_npm_package: ## Create NPM Package for Release
 	rm -rf npm
 	mkdir npm
 	cp -R api npm
+	cp -R auth npm
+	rm -f npm/auth/*.spec.js
 	cp package.json npm
 	cp LICENSE npm
 	cp README.md npm

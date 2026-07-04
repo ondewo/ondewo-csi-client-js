@@ -27,6 +27,8 @@
 
 'use strict';
 
+/* global URLSearchParams, setTimeout, clearTimeout, module */
+
 /**
  * Seconds of head-room subtracted from a token's `expires_in` so the refresh fires before the access
  * token actually lapses (covers clock skew + the round-trip to Keycloak).
