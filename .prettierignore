@@ -17,3 +17,10 @@ src/ondewo-csi-api/*
 
 .isort.cfg
 grpc_cert
+package-lock.json
+package.json
+api/
+npm/
+dist/
+.test-build/
+.test-build-examples/
