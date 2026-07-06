@@ -97,37 +97,66 @@ async function getS2sPipeline({ conversationsClient, S2sPipelineId, authProvider
 }
 
 /**
+ * Read a required environment variable, throwing a descriptive error when it is missing or blank so the
+ * example fails fast with a clear message instead of an opaque downstream error.
+ *
+ * @param {string} name
+ *     The canonical environment variable name (see `examples/environment.env`).
+ * @returns {string}
+ *     The non-empty value of the variable.
+ * @throws {Error}
+ *     When the variable is unset or empty.
+ */
+function requireEnv(name) {
+	const value = process.env[name];
+	if (typeof value !== 'string' || value.length === 0) {
+		throw new Error(`Missing required environment variable ${name} (see examples/environment.env)`);
+	}
+	return value;
+}
+
+/**
  * Wire the real collaborators from environment configuration and run the example end-to-end against a
- * running CSI gRPC-web endpoint (reached through Envoy). Guarded by the `require.main === module` check
- * below; it is never executed by the unit tests.
+ * running CSI gRPC-web endpoint (reached through Envoy). Configuration is loaded from the
+ * `examples/environment.env` dotenv file using the canonical `ONDEWO_*` / `KEYCLOAK_*` variable scheme.
+ * Guarded by the `require.main === module` check below; it is never executed by the unit tests.
  *
  * @returns {Promise<void>}
  *     Resolves once the pipeline has been fetched and the auth refresh loop stopped.
  */
 async function main() {
+	require('dotenv').config({ path: path.join(__dirname, 'environment.env') });
+
 	const { login } = require('../auth/offlineTokenProvider');
 	const csiApi = loadCsiApi();
 
+	const host = requireEnv('ONDEWO_HOST');
+	const port = requireEnv('ONDEWO_PORT');
+	const pipelineId = requireEnv('ONDEWO_CSI_S2S_PIPELINE_ID');
+	const endpoint = `${host}:${port}`;
+
+	console.log('START: getS2sPipelineExample');
+	console.log(`Logging in to Keycloak at ${requireEnv('KEYCLOAK_URL')} (realm=${requireEnv('KEYCLOAK_REALM')})`);
 	const authProvider = await login({
-		keycloakUrl: process.env.ONDEWO_KEYCLOAK_URL,
-		realm: process.env.ONDEWO_KEYCLOAK_REALM,
-		clientId: process.env.ONDEWO_KEYCLOAK_CLIENT_ID || DEFAULT_SDK_CLIENT_ID,
-		username: process.env.ONDEWO_USER_NAME,
-		password: process.env.ONDEWO_USER_PASSWORD
+		keycloakUrl: requireEnv('KEYCLOAK_URL'),
+		realm: requireEnv('KEYCLOAK_REALM'),
+		clientId: process.env.KEYCLOAK_CLIENT_ID || DEFAULT_SDK_CLIENT_ID,
+		username: requireEnv('KEYCLOAK_USER_NAME'),
+		password: requireEnv('KEYCLOAK_PASSWORD'),
+		keycloakVerifySsl: process.env.KEYCLOAK_VERIFY_SSL !== 'false'
 	});
-	const conversationsClient = new csiApi.ConversationsPromiseClient(
-		`${process.env.ONDEWO_CSI_GRPC_HOST}:${process.env.ONDEWO_CSI_GRPC_PORT}`,
-		null,
-		null
-	);
+	console.log('Keycloak login succeeded; obtained bearer token');
+
+	const conversationsClient = new csiApi.ConversationsPromiseClient(endpoint, null, null);
 	try {
+		console.log(`Calling GetS2sPipeline (id=${pipelineId}) at ${endpoint}`);
 		const pipeline = await getS2sPipeline({
 			conversationsClient,
 			S2sPipelineId: csiApi.S2sPipelineId,
 			authProvider,
-			pipelineId: process.env.ONDEWO_CSI_S2S_PIPELINE_ID
+			pipelineId
 		});
-		console.log(`Fetched S2S pipeline id=${pipeline.getId()}`);
+		console.log(`DONE: fetched S2S pipeline id=${pipeline.getId()}`);
 	} finally {
 		authProvider.stop();
 	}
@@ -142,7 +171,11 @@ module.exports = { getS2sPipeline, loadCsiApi };
 
 if (require.main === module) {
 	main().catch((error) => {
-		console.error(error);
-		process.exitCode = 1;
+		if (error && typeof error.code !== 'undefined') {
+			console.error(`getS2sPipelineExample failed: gRPC error code=${error.code} message=${error.message}`);
+		} else {
+			console.error('getS2sPipelineExample failed:', error);
+		}
+		process.exit(1);
 	});
 }

@@ -19,15 +19,25 @@ so it is runnable in the browser and in Node, and unit-testable with the transpo
 
 ### Run against a live endpoint (manual)
 
+Configuration is read from `examples/environment.env` (loaded with `dotenv`). Copy your real values
+into that file — it ships with non-secret placeholders — then run:
+
 ```shell
-ONDEWO_KEYCLOAK_URL=https://<keycloak-host>/auth \
-ONDEWO_KEYCLOAK_REALM=<realm> \
-ONDEWO_USER_NAME=<technical-user-email> \
-ONDEWO_USER_PASSWORD=<password> \
-ONDEWO_CSI_GRPC_HOST=<envoy-host> \
-ONDEWO_CSI_GRPC_PORT=<envoy-port> \
-ONDEWO_CSI_S2S_PIPELINE_ID=<pipeline-id> \
 node examples/getS2sPipelineExample.js
+```
+
+The canonical variables the example reads:
+
+```shell
+ONDEWO_HOST=<envoy-host>
+ONDEWO_PORT=<envoy-port>
+KEYCLOAK_URL=https://<keycloak-host>/auth
+KEYCLOAK_REALM=<realm>
+KEYCLOAK_CLIENT_ID=<sdk-client-id>
+KEYCLOAK_USER_NAME=<technical-user-email>
+KEYCLOAK_PASSWORD=<password>
+KEYCLOAK_VERIFY_SSL=true
+ONDEWO_CSI_S2S_PIPELINE_ID=<pipeline-id>
 ```
 
 ### Test (no server, mocked transport)
