@@ -13,7 +13,18 @@ const compat = new FlatCompat({
 
 export default [
 	{
-		ignores: ['**/api/', 'src/ondewo-csi-api', '**/ondewo-proto-compiler']
+		ignores: [
+			'**/api/',
+			'src/ondewo-csi-api',
+			'**/ondewo-proto-compiler',
+			'**/*.mjs',
+			'npm/',
+			'dist/',
+			'.test-build/',
+			'.test-build-examples/',
+			'auth/*.js',
+			'auth/*.d.ts'
+		]
 	},
 	{
 		files: ['**/*.js'], // Target all JavaScript files
@@ -27,7 +38,7 @@ export default [
 				uuidv4: true,
 				csi: true
 			},
-			ecmaVersion: 2020, // Set ECMAScript version
+			ecmaVersion: 2022, // Set ECMAScript version
 			sourceType: 'module' // If using ES modules
 		},
 		rules: {

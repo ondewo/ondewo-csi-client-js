@@ -52,10 +52,38 @@ npm
 │   ├── ondewo_csi_api.js
 │   ├── ondewo_csi_api.min.js
 │   └── ondewo_csi_api.min.js.map
+├── auth
+│   └── offlineTokenProvider.js
 ├── LICENSE
 ├── package.json
 └── README.md
 ```
+
+## Authentication (Keycloak bearer)
+
+Auth is bearer-only. Every gRPC-web call must carry a short-lived Keycloak **bearer** access token in the `Authorization` metadata header.
+
+Obtain and auto-refresh a token with the offline-token helper shipped in `auth/offlineTokenProvider.js`. Its `login()` performs a one-time ROPC login (`grant_type=password`, `scope=offline_access`) against the **public** SDK client `ondewo-nlu-cai-sdk-public` (no client secret) and refreshes the access token in the background until it lapses.
+
+```js
+const { login } = require('@ondewo/ondewo-csi-client-js/auth/offlineTokenProvider');
+
+const provider = await login({
+	keycloakUrl: 'https://localhost:8443/auth',
+	realm: 'ondewo-ccai-platform',
+	clientId: 'ondewo-nlu-cai-sdk-public',
+	username: 'tech-user@example.com',
+	password: 'super-secret'
+});
+
+const client = new ConversationsPromiseClient('https://localhost:8443', null, null);
+const metadata = { Authorization: provider.getAuthorizationHeader() };
+const response = await client.getS2sPipeline(request, metadata);
+
+provider.stop(); // stop the background refresh loop when done
+```
+
+See `examples/getS2sPipelineExample.js` for a complete, unit-tested example.
 
 [comment]: <> (START OF GITHUB README)
 

@@ -16,8 +16,8 @@ export
 
 ONDEWO_CSI_VERSION = 5.2.0
 
-CSI_API_GIT_BRANCH=tags/5.2.0
-ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/5.2.0
+CSI_API_GIT_BRANCH=OND211-2418-add-keycloak-for-2-fa
+ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/5.10.0
 ONDEWO_PROTO_COMPILER_DIR=ondewo-proto-compiler
 CSI_APIS_DIR=src/ondewo-csi-api
 CSI_PROTOS_DIR=${CSI_APIS_DIR}/ondewo
@@ -28,7 +28,7 @@ IMAGE_UTILS_NAME=ondewo-csi-client-utils-js:${ONDEWO_CSI_VERSION}
 PRETTIER_WRITE?=
 
 CURRENT_RELEASE_NOTES=`cat RELEASE.md \
-	| sed -n '/Release ONDEWO CSI Js Client ${ONDEWO_CSI_VERSION}/,/\*\*/p'`
+	| perl -ne 'print if /Release ONDEWO CSI Js Client ${ONDEWO_CSI_VERSION}/../\*\*/'`
 
 GH_REPO="https://github.com/ondewo/ondewo-csi-client-js"
 DEVOPS_ACCOUNT_GIT="ondewo-devops-accounts"
@@ -187,7 +187,7 @@ spc: ## Checks if the Release Branch, Tag and Pypi version already exist
 # Build
 
 update_package: ## Updates Package Version in src/package.json
-	@sed -i "s/\"version\": \"[0-9]*.[0-9]*.[0-9]\"/\"version\": \"${ONDEWO_CSI_VERSION}\"/g" src/package.json
+	@perl -i -pe "s/\"version\": \"[0-9]*.[0-9]*.[0-9]\"/\"version\": \"${ONDEWO_CSI_VERSION}\"/g" src/package.json
 
 build: check_out_correct_submodule_versions build_compiler update_package npm_run_build ## Build Code with Proto-Compiler
 	@echo "################### PROMPT FOR CHANGING FILE OWNERSHIP FROM ROOT TO YOU ##########################"
@@ -202,21 +202,23 @@ build: check_out_correct_submodule_versions build_compiler update_package npm_ru
 	cp src/RELEASE.md .
 	make remove_npm_script
 	make create_npm_package
-	@$(eval README_CUT_LINES:=$(shell cat -n src/README.md | sed -n "/START OF GITHUB README/,/END OF GITHUB README/p" | grep -o -E '[0-9]+' | sed -e 's/^0\+//' | awk 'NR==1; END{print}'))
-	@$(eval DELETE_LINES:=$(shell echo ${README_CUT_LINES}| sed -e "s/[[:space:]]/,/"))
-	@sed -i "${DELETE_LINES}d" npm/README.md
+	@$(eval README_CUT_LINES:=$(shell cat -n src/README.md | perl -ne 'print if /START OF GITHUB README/../END OF GITHUB README/' | grep -o -E '[0-9]+' | perl -pe 's/^0+//' | awk 'NR==1; END{print}'))
+	@$(eval DELETE_LINES:=$(shell echo ${README_CUT_LINES}| perl -pe "s/[[:space:]]/,/"))
+	@perl -i -ne 'BEGIN{($$s,$$e)=split/,/,"${DELETE_LINES}"} print unless $$. >= $$s && $$. <= $$e' npm/README.md
 	make install_dependencies
 
 remove_npm_script: ## Removes Script section from package.json
-	$(eval script_lines:= $(shell cat package.json | sed -n '/\"scripts\"/,/\}\,/='))
+	$(eval script_lines:= $(shell cat package.json | perl -ne 'print "$$.\n" if /\"scripts\"/../\}\,/'))
 	$(eval start:= $(shell echo $(script_lines) | cut -c 1-2))
 	$(eval end:= $(shell echo $(script_lines) | rev | cut -c 1-3 | rev))
-	@sed -i '$(start),$(end)d' package.json
+	@perl -i -ne 'print unless $$. >= $(start) && $$. <= $(end)' package.json
 
 create_npm_package: ## Create NPM Package for Release
 	rm -rf npm
 	mkdir npm
 	cp -R api npm
+	cp -R auth npm
+	rm -f npm/auth/*.spec.js
 	cp package.json npm
 	cp LICENSE npm
 	cp README.md npm
