@@ -200,6 +200,7 @@ build: check_out_correct_submodule_versions build_compiler update_package npm_ru
 	cp src/package.json .
 	cp src/README.md .
 	cp src/RELEASE.md .
+	make restore_ci_test_setup
 	make create_npm_package
 	make remove_npm_script
 	@$(eval README_CUT_LINES:=$(shell cat -n src/README.md | perl -ne 'print if /START OF GITHUB README/../END OF GITHUB README/' | grep -o -E '[0-9]+' | perl -pe 's/^0+//' | awk 'NR==1; END{print}'))
@@ -250,3 +251,6 @@ npm_run_build: ## Runs the build command in package.json
 	@echo "START npm run build ..."
 	cd src/ && npm run build && cd ..
 	@echo "DONE npm run build."
+
+restore_ci_test_setup: ## Re-add CI test scripts + devDeps (from .ci-package.json) stripped by the proto-compiler root regen
+	@node -e 'const fs=require("fs");if(!fs.existsSync(".ci-package.json")){console.log("no .ci-package.json, skipping");process.exit(0)}const p=JSON.parse(fs.readFileSync("package.json","utf8"));const c=JSON.parse(fs.readFileSync(".ci-package.json","utf8"));p.scripts=Object.assign({},p.scripts||{},c.scripts||{});p.dependencies=Object.assign({},p.dependencies||{},c.dependencies||{});p.devDependencies=Object.assign({},p.devDependencies||{},c.devDependencies||{});if(c.description)p.description=c.description;fs.writeFileSync("package.json",JSON.stringify(p,null,2)+"\n");console.log("restore-ci-package: merged CI test setup; scripts=["+Object.keys(p.scripts).join(",")+"]")'
