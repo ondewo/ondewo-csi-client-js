@@ -69,11 +69,11 @@ Obtain and auto-refresh a token with the offline-token helper shipped in `auth/o
 const { login } = require('@ondewo/ondewo-csi-client-js/auth/offlineTokenProvider');
 
 const provider = await login({
- keycloakUrl: 'https://localhost:8443/auth',
- realm: 'ondewo-ccai-platform',
- clientId: 'ondewo-nlu-cai-sdk-public',
- username: 'tech-user@example.com',
- password: 'super-secret'
+	keycloakUrl: 'https://localhost:8443/auth',
+	realm: 'ondewo-ccai-platform',
+	clientId: 'ondewo-nlu-cai-sdk-public',
+	username: 'tech-user@example.com',
+	password: 'super-secret'
 });
 
 const client = new ConversationsPromiseClient('https://localhost:8443', null, null);
@@ -84,6 +84,8 @@ provider.stop(); // stop the background refresh loop when done
 ```
 
 See `examples/getS2sPipelineExample.js` for a complete, unit-tested example.
+
+[comment]: <> (START OF GITHUB README)
 
 ## Build
 
@@ -103,17 +105,13 @@ The repository is published to GitHub and NPM by the Automated Release Process o
 TODO after PR merge:
 
 - checkout master
-
   ```shell
   git checkout master
   ```
-
 - pull newest state
-
   ```shell
   git pull
   ```
-
 - Adjust `ONDEWO_CSI_VERSION` in the `Makefile` <br><br>
 - Add new Release Notes to `src/RELEASE.md` in following format:
 
@@ -126,11 +124,9 @@ TODO after PR merge:
   ```
 
 - release
-
   ```shell
   make ondewo_release
   ```
-
   <br>
   The release process can be divided into 6 Steps:
 
@@ -142,3 +138,5 @@ TODO after PR merge:
 6. Create a new `Release` on GitHub
 
 > :warning: The Release Automation checks if the build has created all the proto-code files, but it does not check the code-integrity. Please build and test the generated code prior to starting the release process.
+
+[comment]: <> (END OF GITHUB README)
