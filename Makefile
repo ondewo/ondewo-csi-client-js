@@ -14,7 +14,7 @@ export
 # 		Variables
 ########################################################
 
-ONDEWO_CSI_VERSION = 5.2.0
+ONDEWO_CSI_VERSION=5.2.0
 
 CSI_API_GIT_BRANCH=OND211-2418-add-keycloak-for-2-fa
 ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/5.10.0
