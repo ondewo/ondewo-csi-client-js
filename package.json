@@ -1,6 +1,6 @@
 {
   "name": "@ondewo/ondewo-csi-client-js",
-  "version": "5.2.0",
+  "version": "5.4.0",
   "description": "ONDEWO Communication System Integration (CSI) Client library for Js",
   "author": "ONDEWO GmbH <office@ondewo.com>",
   "homepage": "https://ondewo.com",
@@ -13,16 +13,23 @@
     "js",
     "grpc"
   ],
+  "scripts": {
+    "test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js",
+    "initialize": "git submodule update --init --recursive --remote",
+    "build": "docker run -v ${PWD}:/input-volume -v ${PWD}/../api:/output-volume ondewo-js-proto-compiler ondewo-csi-api ondewo-csi-api ondewo",
+    "debug": "docker run --entrypoint /bin/bash -v ${PWD}/src:/input-volume -v ${PWD}/src/..:/output-volume $npm_package_config_compiler",
+    "publish-npm": "npm publish ../npm --access public",
+    "build-update": "npm run build-only && npm run start-example",
+    "start-example": "sudo cp lib/csi.js example/lib/csi.js && http-server example",
+    "example-link-lib": "sudo ln -s lib/csi.js example/lib/csi.js",
+    "build-sample": "docker run -v ${PWD}/src:/input-volume -v ${PWD}/src/../api:/output-volume $npm_package_config_compiler csi ondewo-csi-api ondewo-csi-api ondewo",
+    "test:examples": "node --test examples/getS2sPipelineExample.spec.js"
+  },
   "repository": {
     "type": "git",
     "directory": "https://github.com/ondewo/ondewo-csi-client-js.git"
   },
-  "scripts": {
-    "test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js",
-    "test:examples": "node --test examples/getS2sPipelineExample.spec.js"
-  },
   "dependencies": {
-    "dotenv": "^16.6.1",
     "google-protobuf": "^3.21.4",
     "grpc-web": "^1.5.0",
     "terser-webpack-plugin": "^5.3.14",
@@ -32,14 +39,15 @@
     "webpack-merge": "^6.0.1"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.5",
-    "@eslint/js": "^9.39.4",
-    "@typescript-eslint/eslint-plugin": "^8.62.1",
-    "@typescript-eslint/parser": "^8.62.1",
+    "@eslint/eslintrc": "^3.3.6",
+    "@eslint/js": "^9.39.5",
+    "@typescript-eslint/eslint-plugin": "^8.67.0",
+    "@typescript-eslint/parser": "^8.67.0",
     "c8": "^11.0.0",
-    "eslint": "^9.39.4",
+    "dotenv": "^16.4.5",
+    "eslint": "^9.39.5",
     "global": "^4.4.0",
     "husky": "^9.1.7",
-    "prettier": "^3.9.4"
+    "prettier": "^3.9.6"
   }
 }
