@@ -14,7 +14,7 @@ export
 # 		Variables
 ########################################################
 
-ONDEWO_CSI_VERSION=5.5.0
+ONDEWO_CSI_VERSION=5.5.1
 CSI_API_GIT_BRANCH=tags/5.5.0
 ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/5.11.0
 ONDEWO_PROTO_COMPILER_DIR=ondewo-proto-compiler
@@ -105,7 +105,11 @@ release: ## Create Github and NPM Release
 	git add ${ONDEWO_PROTO_COMPILER_DIR}
 	git add ${CSI_APIS_DIR}
 	git status
-	git commit --no-verify -m "Preparing for Release ${ONDEWO_CSI_VERSION}"
+# Tolerate an empty commit: when a release is re-run after its content was already
+# committed by hand, `git commit` exits 1 on a clean tree and would take the whole
+# target -- npm publish, branch, tag, GitHub release -- down with it. The angular
+# client already had this guard; spc still refuses a branch or tag that exists.
+	-git commit --no-verify -m "Preparing for Release ${ONDEWO_CSI_VERSION}"
 	git push
 	make publish_npm_via_docker
 	make create_release_branch

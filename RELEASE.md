@@ -2,6 +2,27 @@
 
 *****************
 
+## Release ONDEWO CSI Js Client 5.5.1
+
+### Bug Fixes
+
+* A failed background token refresh no longer ends token renewal for the life of the process.
+  `scheduleRefresh` ran only on the success path, so a single transient Keycloak failure left no timer
+  armed: the access token then lapsed and every later call failed `UNAUTHENTICATED` until the
+  application logged in again. The stale token keeps working until it expires, which is what made the
+  defect silent.
+* The failure path now re-arms with bounded exponential backoff and full jitter -- 5 s doubling to a
+  300 s ceiling, with the actual wait drawn uniformly from `[base, ceiling]` -- rather than at the 1 s
+  scheduling floor. The jitter is load-bearing at ondewo's fan-out: one client per call container means
+  N clients whose refreshes fail in the same instant would otherwise retry in lockstep against a realm
+  they all share.
+* A successful refresh resets the backoff ladder, and the bounded-deadline and `stop()` guards still
+  apply to every re-arm.
+* An `onRefreshError` handler that throws no longer kills the refresh loop, and its error no longer
+  escapes the timer callback as a process-fatal `unhandledRejection`.
+
+*****************
+
 ## Release ONDEWO CSI Js Client 5.5.0
 
 ### Improvements
