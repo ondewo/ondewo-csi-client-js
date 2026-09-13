@@ -14,7 +14,7 @@ export
 # 		Variables
 ########################################################
 
-ONDEWO_CSI_VERSION=5.5.1
+ONDEWO_CSI_VERSION=5.5.2
 CSI_API_GIT_BRANCH=tags/5.5.0
 ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/5.11.0
 ONDEWO_PROTO_COMPILER_DIR=ondewo-proto-compiler
@@ -99,6 +99,11 @@ release: ## Create Github and NPM Release
 	git add api
 	git add Makefile
 	git add src
+# auth/ is the hand-written Keycloak provider and its spec. It is copied into the npm
+# package by `make build`, so leaving it out of this list publishes a fix to npm while
+# the git tag of that same version does not contain it -- which is what happened to
+# 5.5.1 and is why 5.5.2 exists.
+	git add auth
 	git add RELEASE.md
 	git add package.json
 	git add package-lock.json

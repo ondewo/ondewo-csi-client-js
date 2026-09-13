@@ -2,6 +2,20 @@
 
 *****************
 
+## Release ONDEWO CSI Js Client 5.5.2
+
+### Bug Fixes
+
+* **Release integrity: 5.5.1 published the Keycloak refresh fix to npm but its git tag did not
+  contain it.** `make build` copies `auth/` into the published package, so the artifact carried the
+  fix, while the release target's `git add` list named `api`, `Makefile`, `src`, `RELEASE.md`, the
+  two package manifests and the submodules -- and not `auth/`. Building 5.5.1 from its tag therefore
+  produced different code than installing 5.5.1 from npm. `auth/` is in that list now.
+* The code is otherwise identical to 5.5.1: the same bounded, jittered backoff on the background
+  token refresh. Nothing to change when upgrading; 5.5.2 exists so the tag and the artifact agree.
+
+*****************
+
 ## Release ONDEWO CSI Js Client 5.5.1
 
 ### Bug Fixes

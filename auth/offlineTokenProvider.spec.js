@@ -687,3 +687,224 @@ runTestCase('keycloakVerifySsl=false still logs in through an injected fetchImpl
 	assert.equal(provider.getAccessToken(), 'access-1');
 	provider.stop();
 });
+
+// ---------------------------------------------------------------------------------------------
+// A failed background refresh must RE-ARM the loop, and it must back off when it keeps failing.
+//
+// Before this group existed the provider armed its next refresh only on the success path, so a
+// single transient failure ended token renewal for the whole life of the process -- silently,
+// because the stale access token keeps working until it expires. The obvious repair (re-arm at the
+// existing MIN_REFRESH_DELAY_IN_S floor of 1 s) trades that for a 1 Hz poll per client against a
+// realm every call container logs into, so the failure path has its own jittered ladder.
+// ---------------------------------------------------------------------------------------------
+
+runTestCase('a failed background refresh re-arms the loop and the next attempt recovers', async () => {
+	const stub = makeFetchStub([
+		{ body: { access_token: 'access-1', refresh_token: 'offline-1', expires_in: 31 } },
+		{ status: 500, body: 'boom' },
+		{ body: { access_token: 'access-2', refresh_token: 'offline-2', expires_in: 31 } }
+	]);
+
+	mock.timers.enable({ apis: ['setTimeout'] });
+	try {
+		const provider = await login({
+			...BASE_OPTIONS,
+			fetchImpl: stub.fetchImpl,
+			// randomFraction 0 puts every retry at the base of its window, so the delay is exact.
+			randomFraction: () => 0
+		});
+
+		mock.timers.tick(1000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 2, 'the first refresh should have been attempted and failed');
+		assert.equal(provider.getAccessToken(), 'access-1', 'a failed refresh must not clobber the token');
+
+		// Nothing may fire before the 5 s retry base...
+		mock.timers.tick(4999);
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 2, 'the retry must not fire before the backoff base elapses');
+
+		// ...and the retry must fire once it does. This is the assertion that fails outright on the
+		// pre-fix provider, where no timer was ever re-armed.
+		mock.timers.tick(1);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 3, 'the loop must re-arm after a failed refresh');
+		assert.equal(provider.getAccessToken(), 'access-2', 'the recovered refresh must install the new token');
+		provider.stop();
+	} finally {
+		mock.timers.reset();
+	}
+});
+
+runTestCase('consecutive failures back off exponentially and stop growing at the ceiling', async () => {
+	// One login plus nine failing refreshes: enough to walk past the exponent cap.
+	const responses = [{ body: { access_token: 'a', refresh_token: 'r', expires_in: 31 } }];
+	for (let index = 0; index < 9; index += 1) {
+		responses.push({ status: 503, body: 'down' });
+	}
+	const stub = makeFetchStub(responses);
+
+	mock.timers.enable({ apis: ['setTimeout'] });
+	try {
+		const provider = await login({
+			...BASE_OPTIONS,
+			fetchImpl: stub.fetchImpl,
+			// randomFraction 1 puts every retry at the TOP of its window, i.e. exactly the ceiling
+			// for that failure count -- which is what makes the ladder observable.
+			randomFraction: () => 1
+		});
+
+		mock.timers.tick(1000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 2);
+
+		// base * 2^(failures-1), capped at 300 s. The cap is the point: without it a long outage
+		// would push the next attempt out by hours.
+		const expectedDelaysInS = [5, 10, 20, 40, 80, 160, 300, 300];
+		let attempt = 2;
+		for (const delayInS of expectedDelaysInS) {
+			mock.timers.tick(delayInS * 1000 - 1);
+			await flushMicrotasks();
+			assert.equal(stub.calls.length, attempt, `a retry fired early at the ${delayInS}s step`);
+
+			mock.timers.tick(1);
+			await flushMicrotasks();
+			await flushMicrotasks();
+			attempt += 1;
+			assert.equal(stub.calls.length, attempt, `no retry fired at the ${delayInS}s step`);
+		}
+		provider.stop();
+	} finally {
+		mock.timers.reset();
+	}
+});
+
+runTestCase('the retry delay is drawn from the jitter window rather than pinned to its edge', async () => {
+	const stub = makeFetchStub([
+		{ body: { access_token: 'a', refresh_token: 'r', expires_in: 31 } },
+		{ status: 503, body: 'down' },
+		{ status: 503, body: 'down' },
+		{ body: { access_token: 'b', refresh_token: 'r2', expires_in: 31 } }
+	]);
+
+	mock.timers.enable({ apis: ['setTimeout'] });
+	try {
+		const provider = await login({
+			...BASE_OPTIONS,
+			fetchImpl: stub.fetchImpl,
+			randomFraction: () => 0.5
+		});
+
+		mock.timers.tick(1000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 2);
+
+		// Failure 1: window [5, 5] -> 5 s regardless of the fraction.
+		mock.timers.tick(5000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 3);
+
+		// Failure 2: window [5, 10], fraction 0.5 -> 7.5 s. Neither edge of the window.
+		mock.timers.tick(7499);
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 3, 'the jittered retry fired before its drawn delay');
+		mock.timers.tick(1);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 4, 'the jittered retry did not fire at its drawn delay');
+		provider.stop();
+	} finally {
+		mock.timers.reset();
+	}
+});
+
+runTestCase('a successful refresh resets the backoff ladder', async () => {
+	const stub = makeFetchStub([
+		{ body: { access_token: 'a', refresh_token: 'r', expires_in: 31 } },
+		{ status: 503, body: 'down' },
+		{ status: 503, body: 'down' },
+		{ body: { access_token: 'b', refresh_token: 'r2', expires_in: 31 } },
+		{ status: 503, body: 'down' },
+		{ body: { access_token: 'c', refresh_token: 'r3', expires_in: 31 } }
+	]);
+
+	mock.timers.enable({ apis: ['setTimeout'] });
+	try {
+		const provider = await login({
+			...BASE_OPTIONS,
+			fetchImpl: stub.fetchImpl,
+			randomFraction: () => 1
+		});
+
+		mock.timers.tick(1000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		mock.timers.tick(5000); // failure 1 -> 5 s
+		await flushMicrotasks();
+		await flushMicrotasks();
+		mock.timers.tick(10000); // failure 2 -> 10 s, and this attempt SUCCEEDS
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 4);
+		assert.equal(provider.getAccessToken(), 'b');
+
+		// Back on the success schedule: expires_in 31 - skew 30 = 1 s.
+		mock.timers.tick(1000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 5, 'the success path should re-arm on the token lifetime');
+
+		// That attempt failed again -- and because the ladder was reset it must wait 5 s, not 20 s.
+		mock.timers.tick(4999);
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 5);
+		mock.timers.tick(1);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 6, 'a success must reset the backoff to its base');
+		provider.stop();
+	} finally {
+		mock.timers.reset();
+	}
+});
+
+runTestCase('a throwing onRefreshError handler still leaves the loop armed', async () => {
+	const stub = makeFetchStub([
+		{ body: { access_token: 'a', refresh_token: 'r', expires_in: 31 } },
+		{ status: 503, body: 'down' },
+		{ body: { access_token: 'b', refresh_token: 'r2', expires_in: 31 } }
+	]);
+
+	mock.timers.enable({ apis: ['setTimeout'] });
+	try {
+		const provider = await login({
+			...BASE_OPTIONS,
+			fetchImpl: stub.fetchImpl,
+			randomFraction: () => 0
+		});
+		provider.onRefreshError(() => {
+			throw new Error('a diagnostics handler that misbehaves');
+		});
+
+		mock.timers.tick(1000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 2);
+
+		// The handler's own error is contained and the re-arm runs unconditionally, so a throwing
+		// handler neither ends the loop nor escapes as a process-fatal unhandledRejection.
+		mock.timers.tick(5000);
+		await flushMicrotasks();
+		await flushMicrotasks();
+		assert.equal(stub.calls.length, 3, 'a throwing error handler must not kill the refresh loop');
+		assert.equal(provider.getAccessToken(), 'b');
+		provider.stop();
+	} finally {
+		mock.timers.reset();
+	}
+});
