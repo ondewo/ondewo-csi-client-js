@@ -2,6 +2,22 @@
 
 *****************
 
+## Release ONDEWO CSI Js Client 5.5.4
+
+### Bug Fixes
+
+* **5.5.3 carried the guard for the broken-bundle defect but not the fix**, so it shipped with the
+  same unusable bundle as 5.5.0-5.5.2: the `google-protobuf` pin in `src/package.json` was reverted
+  to `^3.21.4` by an unrelated `git checkout --` of that file while a test-script edit was being
+  undone, and the release rebuilt the bundle against the old runtime. The pin is `^4.0.2` here and
+  `tests/bundleStringRoundTrip.spec.js` -- which 5.5.3 added -- passes against this bundle.
+* The lesson is in the guard's own history: a test added in the same release as its fix protects
+  nothing if the release publishes before the test runs. `make ondewo_release` runs the pre-commit
+  hooks and `check_build`, not `npm test`, so the guard is a CI check and has to be run by hand
+  before cutting a release that claims to fix what it guards.
+
+*****************
+
 ## Release ONDEWO CSI Js Client 5.5.3
 
 ### Bug Fixes
