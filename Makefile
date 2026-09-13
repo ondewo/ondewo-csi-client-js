@@ -104,6 +104,11 @@ release: ## Create Github and NPM Release
 # the git tag of that same version does not contain it -- which is what happened to
 # 5.5.1 and is why 5.5.2 exists.
 	git add auth
+# README.md is a BUILD OUTPUT: `make build` runs `cp src/README.md .`, so anything written
+# only in the root copy is destroyed on the next build. src/README.md is the source of
+# truth (it is covered by `git add src`); this stages the generated copy so the tracked
+# file cannot drift from it.
+	git add README.md
 	git add RELEASE.md
 	git add package.json
 	git add package-lock.json
