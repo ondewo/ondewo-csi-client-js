@@ -1,6 +1,6 @@
 {
   "name": "@ondewo/ondewo-csi-client-js",
-  "version": "5.5.2",
+  "version": "5.5.3",
   "description": "ONDEWO Communication System Integration (CSI) Client library for Js",
   "author": "ONDEWO GmbH <office@ondewo.com>",
   "homepage": "https://ondewo.com",
@@ -14,7 +14,7 @@
     "grpc"
   ],
   "scripts": {
-    "test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js",
+    "test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js && npm run test:protos",
     "initialize": "git submodule update --init --recursive --remote",
     "build": "docker run -v ${PWD}:/input-volume -v ${PWD}/../api:/output-volume ondewo-js-proto-compiler ondewo-csi-api ondewo-csi-api ondewo",
     "debug": "docker run --entrypoint /bin/bash -v ${PWD}/src:/input-volume -v ${PWD}/src/..:/output-volume $npm_package_config_compiler",
@@ -23,7 +23,8 @@
     "start-example": "sudo cp lib/csi.js example/lib/csi.js && http-server example",
     "example-link-lib": "sudo ln -s lib/csi.js example/lib/csi.js",
     "build-sample": "docker run -v ${PWD}/src:/input-volume -v ${PWD}/src/../api:/output-volume $npm_package_config_compiler csi ondewo-csi-api ondewo-csi-api ondewo",
-    "test:examples": "node --test examples/getS2sPipelineExample.spec.js"
+    "test:examples": "node --test examples/getS2sPipelineExample.spec.js",
+    "test:protos": "node --test tests/bundleStringRoundTrip.spec.js"
   },
   "repository": {
     "type": "git",

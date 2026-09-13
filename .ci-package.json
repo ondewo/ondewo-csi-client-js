@@ -1,8 +1,9 @@
 {
 	"description": "ONDEWO Communication System Integration (CSI) Client library for Js",
 	"scripts": {
-		"test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js",
-		"test:examples": "node --test examples/getS2sPipelineExample.spec.js"
+		"test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js && npm run test:protos",
+		"test:examples": "node --test examples/getS2sPipelineExample.spec.js",
+		"test:protos": "node --test tests/bundleStringRoundTrip.spec.js"
 	},
 	"devDependencies": {
 		"@typescript-eslint/parser": "^8.62.1",

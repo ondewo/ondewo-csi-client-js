@@ -2,6 +2,28 @@
 
 *****************
 
+## Release ONDEWO CSI Js Client 5.5.3
+
+### Bug Fixes
+
+* **5.5.0, 5.5.1 and 5.5.2 could not deserialize a single string field.**
+  `api/ondewo_csi_api.js` is a self-contained browser bundle: it embeds the `google-protobuf`
+  runtime installed when it was built. The proto compiler now emits
+  `reader.readStringRequireUtf8()` (1907 call sites; 5.4.1 had zero), and that method does not
+  exist in `google-protobuf` 3.21.4 -- which `src/package.json` pinned as `^3.21.4`, a range that
+  can never resolve to the 4.x line where it was added. Every `deserializeBinary` on a message
+  carrying a string threw `TypeError: reader.readStringRequireUtf8 is not a function`.
+* The runtime pin is `^4.0.2` now and the bundle is rebuilt against it. No generated message code
+  and no proto content changed.
+* **A guard was added, because nothing in this repository could see the defect.** The `.proto`
+  sources, the generated `_pb.js`, the auth suite and its 100% coverage gate were all correct --
+  only the bundle's embedded runtime was wrong, so only a test that loads the SHIPPED BUNDLE and
+  decodes a message could catch it. `tests/bundleStringRoundTrip.spec.js` evaluates the bundle in a
+  `vm` with no `require` available and round-trips a string with multi-byte characters; it is
+  verified falsifiable against the published 5.5.2 bundle, which fails it.
+
+*****************
+
 ## Release ONDEWO CSI Js Client 5.5.2
 
 ### Bug Fixes

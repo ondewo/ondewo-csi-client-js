@@ -14,7 +14,7 @@ export
 # 		Variables
 ########################################################
 
-ONDEWO_CSI_VERSION=5.5.2
+ONDEWO_CSI_VERSION=5.5.3
 CSI_API_GIT_BRANCH=tags/5.5.0
 ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/5.11.0
 ONDEWO_PROTO_COMPILER_DIR=ondewo-proto-compiler
@@ -104,6 +104,11 @@ release: ## Create Github and NPM Release
 # the git tag of that same version does not contain it -- which is what happened to
 # 5.5.1 and is why 5.5.2 exists.
 	git add auth
+# tests/ and .ci-package.json are NOT packaged, but leaving them out means a regression test
+# written alongside a fix never reaches the repository and CI never runs it. .ci-package.json
+# is where the test scripts durably live -- the proto compiler regenerates the root
+# package.json, and `restore_ci_test_setup` merges them back from there.
+	git add tests .ci-package.json eslint.config.mjs
 # README.md is a BUILD OUTPUT: `make build` runs `cp src/README.md .`, so anything written
 # only in the root copy is destroyed on the next build. src/README.md is the source of
 # truth (it is covered by `git add src`); this stages the generated copy so the tracked
