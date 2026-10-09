@@ -14,7 +14,7 @@
     "grpc"
   ],
   "scripts": {
-    "test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js && npm run test:protos",
+    "test": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --include auth/grpcWebEndpoint.js --exclude \"**/*.spec.js\" --reporter text node --test auth/offlineTokenProvider.spec.js auth/grpcWebEndpoint.spec.js && npm run test:protos && npm run test:release-notes",
     "initialize": "git submodule update --init --recursive --remote",
     "build": "docker run -v ${PWD}:/input-volume -v ${PWD}/../api:/output-volume ondewo-js-proto-compiler ondewo-csi-api ondewo-csi-api ondewo",
     "debug": "docker run --entrypoint /bin/bash -v ${PWD}/src:/input-volume -v ${PWD}/src/..:/output-volume $npm_package_config_compiler",
@@ -24,7 +24,8 @@
     "example-link-lib": "sudo ln -s lib/csi.js example/lib/csi.js",
     "build-sample": "docker run -v ${PWD}/src:/input-volume -v ${PWD}/src/../api:/output-volume $npm_package_config_compiler csi ondewo-csi-api ondewo-csi-api ondewo",
     "test:examples": "node --test examples/getS2sPipelineExample.spec.js",
-    "test:protos": "node --test tests/bundleStringRoundTrip.spec.js"
+    "test:protos": "node --test tests/bundleStringRoundTrip.spec.js",
+    "test:release-notes": "node --test tests/releaseNotes.spec.js"
   },
   "repository": {
     "type": "git",
