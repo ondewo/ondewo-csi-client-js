@@ -25,7 +25,7 @@
     "build-sample": "docker run -v ${PWD}/src:/input-volume -v ${PWD}/src/../api:/output-volume $npm_package_config_compiler csi ondewo-csi-api ondewo-csi-api ondewo",
     "test:examples": "node --test examples/getS2sPipelineExample.spec.js",
     "test:protos": "node --test tests/bundleStringRoundTrip.spec.js",
-    "test:release-notes": "node --test tests/releaseNotes.spec.js"
+    "test:release-notes": "node --test tests/releaseNotes.spec.js tests/releaseCredentials.spec.js"
   },
   "repository": {
     "type": "git",
