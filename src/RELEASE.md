@@ -2,6 +2,30 @@
 
 *****************
 
+## Release ONDEWO CSI Js Client 5.6.0
+
+### New Features
+
+* [[OND233-367]](https://ondewo.atlassian.net/browse/OND233-367) Tracks
+  [ONDEWO CSI API 5.6.0](https://github.com/ondewo/ondewo-csi-api/releases/tag/5.6.0) (was 5.5.0). The generated
+  bundle now carries:
+  * `Conversations.SetCallMediaControl` (`CallMediaControlLevel` -> `SetCallMediaControlResponse`): per-call operator
+    media control pushed by ondewo-sip (in-container token only), with the full effective level (`bot_muted`,
+    `listening_paused`), a monotonic `generation`, a `reason` token, and in the response `applied`, `changed`,
+    `stale`, `bot_playback_in_flight` and `refusal_reason`.
+  * `ControlStreamResponse.media_control`, set only on media-control messages of `GetControlStream`. A client must
+    handle such a message as media control and must not apply its echoed `control_status`.
+* The API change is purely additive (the nlu 7.1.0, s2t 7.5.0 and t2s 6.6.0 API submodules are unchanged): a client
+  built against 5.5.0 stays wire-compatible.
+
+### Build
+
+* Regenerated with [ondewo-proto-compiler 5.15.5](https://github.com/ondewo/ondewo-proto-compiler/releases/tag/5.15.5)
+  (previous release: 5.15.2). The embedded `google-protobuf` runtime stays on the 4.x line (`^4.0.2`), and
+  `tests/bundleStringRoundTrip.spec.js` passes on the shipped bundle.
+
+*****************
+
 ## Release ONDEWO CSI Js Client 5.5.5
 
 ### Improvements
