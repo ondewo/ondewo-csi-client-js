@@ -2,6 +2,14 @@
 
 *****************
 
+## Release ONDEWO CSI Js Client 5.6.2
+
+### Improvements
+
+* Tracking API Version [5.6.2](https://github.com/ondewo/ondewo-csi-api/releases/tag/5.6.2) ( [Documentation](https://ondewo.github.io/ondewo-csi-api/) )
+
+*****************
+
 ## Release ONDEWO CSI Js Client 5.6.0
 
 ### New Features
