@@ -218,7 +218,7 @@ The `make build` command is dependent on 2 `repositories` and their speciefied `
 - [ondewo-csi-api](https://github.com/ondewo/ondewo-csi-api) -- `CSI_API_GIT_BRANCH` in `Makefile`
 - [ondewo-proto-compiler](https://github.com/ondewo/ondewo-proto-compiler) -- `ONDEWO_PROTO_COMPILER_GIT_BRANCH` in `Makefile`
 
-Other than creating the proto-code, `build` also installs the `dev-dependencies` and changes the owner of the proto-code-files from `root` to the `current user`.
+Other than creating the proto-code, `build` also installs the `dev-dependencies` and hands the generated files in `api/` from `root` back to the `current user` (in a container, without `sudo`).
 
 > :white_check_mark: The js-compiler (version ~4.1.1) will prompt to download webpack -- write yes / y to finish the build
 
@@ -257,16 +257,34 @@ TODO after PR merge:
   make ondewo_release
   ```
 
-  <br>
-  The release process can be divided into 6 Steps:
+  `make ondewo_release` runs `spc`, loads `GITHUB_GH_TOKEN` and `NPM_AUTOMATION_TOKEN` from the
+  `ondewo-devops-accounts` repository and deletes that clone again before the release starts (also when
+  anything fails). Set `DEVOPS_ACCOUNT_DIR` to an existing clone to use it instead of cloning one; the release
+  driver in `ondewo-csi-api` does. `make release` then runs, in this order (pinned by
+  `tests/releaseCredentials.spec.js`):
 
-1. `build` specified version of the `ondewo-csi-api`
-2. `commit and push` all changes in code resulting from the `build`
-3. Publish the created `npm` folder to `npmjs.com`
-4. Create and push the `release branch` e.g. `release/1.3.20`
-5. Create and push the `release tag` e.g. `1.3.20`
-6. Create a new `Release` on GitHub
+1. `release_preflight` -- changes nothing and fails before anything is built: the host has `docker`, `make`,
+   `git`, `perl` and `curl`; `src/RELEASE.md` has a non-empty `## Release ONDEWO CSI Js Client <version>`
+   section; neither the tag nor `release/<version>` exists, locally or on origin; npm does not have the
+   version yet; the npm token authenticates (`npm whoami`), the GitHub token may push to this repository, and
+   `git push --dry-run` is accepted
+2. `build` and `check_build` -- generate `api/` from the pinned `ondewo-csi-api` with the pinned
+   `ondewo-proto-compiler`
+3. `release_tests` -- `npm ci`, then the full `npm test` suite (auth, examples, the API surface derived from
+   the protos, the release Makefile)
+4. the pre-commit hooks, then a local commit `Preparing for Release <version>`
+5. `check_tag_matches_package` -- every file npm would publish is committed and byte-equal at that commit
+6. `npm publish` of `npm/`, then `check_npm_published` -- npm serves the version (retried)
+7. `git push`, the release branch `release/<version>`, the tag `<version>`
+8. the GitHub release, which refuses empty notes
+9. `release_verify` -- origin has the tag, the GitHub release has a body, npm serves the version; it can also
+   be run on its own after a release
 
-> :warning: The Release Automation checks if the build has created all the proto-code files, but it does not check the code-integrity. Please build and test the generated code prior to starting the release process.
+The credentials reach only the steps that use them (the preflight, the publish, the GitHub release and
+`release_verify`), each inside its own container; every other step runs with both removed from its
+environment. A failure before step 6 leaves npm and origin untouched; after step 6, re-run only the failed
+step. The host needs `docker`, `make`, `git`, `perl` and `curl`. `node`/`npm` and `pre-commit` are used
+from the host when present, otherwise from the pinned tools image (`docker build --target tools -f
+Dockerfile.utils .`); `gh` always runs in that image.
 
 [comment]: <> (END OF GITHUB README)
