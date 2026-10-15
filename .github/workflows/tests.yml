@@ -2,31 +2,42 @@ name: tests
 
 on:
   push:
-    branches: ['**']
+    branches:
+      - master
+      - 'release/**'
+    tags:
+      - '*'
   pull_request:
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      # actions/checkout starts with a bare `git init`, and git then prints a multi-line
+      # "Using 'master' as the name for the initial branch" hint into every job log. Naming the
+      # default up front silences it; master is this repository's default branch anyway.
+      - name: Name git's default branch
+        run: git config --global init.defaultBranch master
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+
+      # tests/csiApiSurface.spec.js derives the expected API surface from these protos. Only this
+      # submodule: ondewo-proto-compiler is not needed by any test. .gitmodules names it by SSH URL,
+      # which a runner without a key cannot clone, so it is fetched over public HTTPS instead.
+      - name: Check out the ondewo-csi-api submodule
+        run: 'git -c url.https://github.com/.insteadOf=git@github.com: submodule update --init src/ondewo-csi-api'
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
-      # The repo is ~95% generated gRPC/protobuf stubs; coverage is gated on the HAND-WRITTEN surface only
-      # (the D18 Keycloak offline-token auth provider, auth/offlineTokenProvider.js). The test runs node's
-      # built-in test runner under c8 with a 100% line/branch/function coverage gate scoped to that file.
-      - name: Unit tests + 100% coverage gate on hand-written auth code
+      # The suite `make release_tests` runs before anything is published: the auth provider under a 100%
+      # line/branch/function coverage gate (the repo is ~95% generated stubs, so the gate is scoped to the
+      # HAND-WRITTEN auth/*.js), the mocked example (no live server), the shipped bundle and its API surface
+      # derived from the protos, and the release Makefile.
+      - name: Unit tests (auth with 100% coverage gate, examples, API surface, release Makefile)
         run: npm test
-
-      # Mock-based tests for the hand-written examples (examples/*.spec.js): the gRPC-web client and the
-      # offline-token login are stubbed, so no live backend is needed. Kept out of the coverage-gated
-      # `npm test` above so that gate stays scoped to auth/offlineTokenProvider.js only.
-      - name: Example tests (gRPC client mocked, no live server)
-        run: npm run test:examples
