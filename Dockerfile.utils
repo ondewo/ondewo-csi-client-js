@@ -1,44 +1,45 @@
-FROM python:3.12-slim
+# Two stages, built with `docker build --target <stage>`:
+#
+#   tools   - node, npm, gh, git, make, perl and pre-commit, plus the Makefile. Needs nothing the build
+#             produces, so `release_preflight` can build it BEFORE anything is built, committed or pushed,
+#             and the release runs node/npm/pre-commit in it when the host has none.
+#   release - tools + the npm/ package and the release notes: what `publish_npm_via_docker` and
+#             `release_to_github_via_docker_image` run in.
+#
+# No credential is baked in: the release hands them to `docker run -e NAME` by name, per step.
+
+# node:24.18.0-bookworm (npm 11.16.0), pinned by digest; Debian bookworm already carries git, make, perl,
+# curl and python3. npm >= 11.16 is what pre-commit's node hooks (markdownlint-cli2) install with.
+FROM node:24.18.0-bookworm@sha256:5711a0d445a1af54af9589066c646df387d1831a608226f4cd694fc59e745059 AS tools
 
 ENV LANG=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Vienna
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
-ENV GITHUB_GH_TOKEN=<GITHUB_GH_TOKEN>
-ENV NPM_AUTOMATION_TOKEN=<NPM_AUTOMATION_TOKEN>
+# gh from the release tarball, pinned by version and checked against the sha256 published in
+# https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt
+ARG GH_VERSION=2.102.0
+ARG GH_SHA256=bb766f710eef8ede859c18578c72c327597cd4c8a85b06001b1f3843c6019386
+ARG PRE_COMMIT_VERSION=4.6.2
 
-RUN apt-get update -qq  \
-  && apt-get dist-upgrade -qq -y --no-install-recommends --fix-missing make tmux vim sed tree tk-dev curl sudo tzdata \
-  && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime  \
-  && echo $TZ > /etc/timezone \
-  && dpkg-reconfigure --frontend noninteractive tzdata \
-  && apt-get clean \
-  && apt-get purge -y --auto-remove \
-  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-
-RUN curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
-
-ENV NVM_DIR /home
-ENV NODE_VERSION=24.14.0
-
-RUN . ~/.nvm/nvm.sh \
-    && nvm install $NODE_VERSION \
-    && nvm alias default $NODE_VERSION \
-    && nvm use default
-
-ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
-ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-
-RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-    && sudo apt update \
-    && sudo apt install -y gh
+RUN curl -fsSL -o /tmp/gh.tar.gz \
+      "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_amd64.tar.gz" \
+  && echo "${GH_SHA256}  /tmp/gh.tar.gz" | sha256sum -c - \
+  && tar -xzf /tmp/gh.tar.gz -C /tmp \
+  && install -m 0755 "/tmp/gh_${GH_VERSION}_linux_amd64/bin/gh" /usr/local/bin/gh \
+  && rm -rf /tmp/gh.tar.gz "/tmp/gh_${GH_VERSION}_linux_amd64" \
+  && apt-get update -qq \
+  && apt-get install -y -qq --no-install-recommends python3-venv \
+  && rm -rf /var/lib/apt/lists/* \
+  && python3 -m venv /opt/pre-commit \
+  && /opt/pre-commit/bin/pip install --no-cache-dir --disable-pip-version-check -q "pre-commit==${PRE_COMMIT_VERSION}" \
+  && ln -s /opt/pre-commit/bin/pre-commit /usr/local/bin/pre-commit
 
 WORKDIR /home/ondewo/
 
 COPY Makefile .
+
+FROM tools AS release
 
 COPY LICENSE .
 
@@ -47,6 +48,3 @@ COPY README.md .
 COPY RELEASE.md .
 
 COPY npm npm
-
-# run the container forever
-CMD tail -f /dev/null

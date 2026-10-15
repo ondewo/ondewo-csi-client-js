@@ -1,0 +1,9 @@
+# The utils image needs only Makefile, LICENSE, README.md, RELEASE.md and npm/. Above all, the
+# credentials clone of `make ondewo_release` must never reach a build context.
+ondewo-devops-accounts
+node_modules
+.git
+src/ondewo-csi-api
+ondewo-proto-compiler
+coverage
+.nyc_output

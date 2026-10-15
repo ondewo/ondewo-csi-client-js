@@ -24,3 +24,4 @@ npm/
 dist/
 .test-build/
 .test-build-examples/
+coverage/

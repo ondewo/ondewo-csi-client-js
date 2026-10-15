@@ -15,9 +15,10 @@
 
 // THE GITHUB RELEASE BODY IS SLICED OUT OF RELEASE.md BY THE MAKEFILE.
 //
-// `CURRENT_RELEASE_NOTES` prints RELEASE.md from the line `Release ONDEWO CSI Js Client <version>` to the
-// next `*****` line. A heading spelled any other way, or a section without its separator, gives an empty
-// or overlong slice, and `gh release create -n "..."` publishes it without an error.
+// `RELEASE_NOTES_SLICE` prints RELEASE.md from the heading `## Release ONDEWO CSI Js Client <version>`
+// (anchored, version quoted) to the next `*****` line. A heading spelled any other way, or a section
+// without its separator, gives an empty or overlong slice. `release_preflight` and `build_gh_release`
+// refuse an empty one; this suite keeps the file in the shape the slice expects.
 //
 //   node --test tests/releaseNotes.spec.js
 
@@ -38,8 +39,12 @@ const MAKEFILE = fs.readFileSync(path.join(REPO_ROOT, 'Makefile'), 'utf8');
 /** The release notes; `src/RELEASE.md` is the source the build copies over the root file. */
 const RELEASE_NOTES = fs.readFileSync(path.join(REPO_ROOT, 'src', 'RELEASE.md'), 'utf8');
 
-/** The exact slice command in the Makefile; `${ONDEWO_CSI_VERSION}` is expanded by make. */
-const SLICE_COMMAND = "perl -ne 'print if /Release ONDEWO CSI Js Client ${ONDEWO_CSI_VERSION}/../^\\*{5}/'";
+/**
+ * The exact slice command in the Makefile, as written there: make turns `\#` into `#` and `$$` into `$`,
+ * and expands `$(ONDEWO_CSI_VERSION)`.
+ */
+const SLICE_COMMAND =
+	"RELEASE_NOTES_SLICE=perl -ne 'print if /^\\#+ Release ONDEWO CSI Js Client \\Q$(ONDEWO_CSI_VERSION)\\E$$/../^\\*{5}/'";
 
 /** Every release heading must read exactly like this. */
 const HEADING = /^## Release ONDEWO CSI Js Client (\d+\.\d+\.\d+)$/;
@@ -49,12 +54,14 @@ const HEADING = /^## Release ONDEWO CSI Js Client (\d+\.\d+\.\d+)$/;
  *
  * @param {string} version
  *   The version whose section is sliced.
+ * @param {string} [input]
+ *   The release notes to slice; RELEASE.md by default.
  * @returns {string}
  *   The slice: the heading line through the next `*****` separator.
  */
-function sliceReleaseNotes(version) {
-	return execFileSync('perl', ['-ne', `print if /Release ONDEWO CSI Js Client ${version}/../^\\*{5}/`], {
-		input: RELEASE_NOTES,
+function sliceReleaseNotes(version, input = RELEASE_NOTES) {
+	return execFileSync('perl', ['-ne', `print if /^#+ Release ONDEWO CSI Js Client \\Q${version}\\E$/../^\\*{5}/`], {
+		input,
 		encoding: 'utf8'
 	});
 }
@@ -103,4 +110,21 @@ runTestCase('the version the Makefile releases has a non-empty slice', () => {
 	assert.ok(HEADING.test(slice[0]), `the slice does not start at the heading: ${slice[0]}`);
 	assert.ok(slice.filter((line) => line.trim().length > 0).length > 2, 'the slice is empty');
 	assert.ok(/^\*{5}/.test(slice[slice.length - 1]), 'the slice does not end at a ***** separator');
+});
+
+runTestCase('the slice is anchored: a version never matches a longer one, and a dot is not a wildcard', () => {
+	const notes = [
+		'## Release ONDEWO CSI Js Client 19.1.0',
+		'',
+		'- not this one',
+		'',
+		'*****************',
+		'## Release ONDEWO CSI Js Client 9x1x0',
+		'',
+		'- nor this one',
+		'',
+		'*****************',
+		''
+	].join('\n');
+	assert.equal(sliceReleaseNotes('9.1.0', notes), '');
 });
