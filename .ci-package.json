@@ -3,7 +3,7 @@
 	"scripts": {
 		"test:auth": "c8 --check-coverage --lines 100 --branches 100 --functions 100 --include auth/offlineTokenProvider.js --include auth/grpcWebEndpoint.js --exclude '**/*.spec.js' --reporter text node --test auth/offlineTokenProvider.spec.js auth/grpcWebEndpoint.spec.js",
 		"test:examples": "node --test examples/getS2sPipelineExample.spec.js",
-		"test:protos": "node --test tests/bundleStringRoundTrip.spec.js",
+		"test:protos": "node --test tests/bundleStringRoundTrip.spec.js tests/csiApiSurface.spec.js",
 		"test:release-notes": "node --test tests/releaseNotes.spec.js tests/releaseCredentials.spec.js tests/checkTagMatchesPackage.spec.js",
 		"test": "npm run test:auth && npm run test:examples && npm run test:protos && npm run test:release-notes"
 	},
