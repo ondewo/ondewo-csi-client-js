@@ -13,9 +13,9 @@ export
 # 		Variables
 ########################################################
 
-ONDEWO_CSI_VERSION=5.6.2
+ONDEWO_CSI_VERSION=5.7.0
 
-CSI_API_GIT_BRANCH=tags/5.6.2
+CSI_API_GIT_BRANCH=tags/5.7.0
 # Must name the tag the committed ondewo-proto-compiler submodule points at, otherwise
 # check_out_correct_submodule_versions checks the submodule BACK to the older tag.
 ONDEWO_PROTO_COMPILER_GIT_BRANCH=tags/5.15.7
