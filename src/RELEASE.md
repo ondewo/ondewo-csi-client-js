@@ -2,6 +2,15 @@
 
 *****************
 
+## Release ONDEWO CSI Js Client 5.9.0
+
+### Improvements
+
+* Tracking API Version [5.9.0](https://github.com/ondewo/ondewo-csi-api/releases/tag/5.9.0) ( [Documentation](https://ondewo.github.io/ondewo-csi-api/) )
+* Generated with ondewo-proto-compiler 5.17.0 (protoc 35.1); new runtime floors: `grpc-web ^2.1.1` and `google-protobuf ^4.0.3` (both bundled into `api/ondewo_csi_api.js`). grpc-web 2.1.1 limits a response to 4 MB unless `maxReceiveMessageSize` is set.
+
+*****************
+
 ## Release ONDEWO CSI Js Client 5.7.0
 
 ### Improvements
